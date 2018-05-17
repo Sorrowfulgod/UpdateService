@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <GlobalParams>
+    <Param Helper="Install-Updates.ps1" name="UseWMIInsteadCOM" value="false" type="bool" />
+    <!-- PowerShell sessions must be created
+    <PSSession>
+      <Param name="ConfigurationName" value="UpdateSess" />
+    </PSSession> -->
+  </GlobalParams>
+
+  <!-- <Role roleName="All" skipUpdates="Defender" /> -->
+  <Role roleName="WindowsAzurePack" skipUpdates="Windows Azure Pack" />
+	<Role roleName="Failover-Clustering">
+		<Param name="UseQuickMigrationIfLiveFails" value="true" type="bool" />
+    <!-- Save - save me, off - shutdown vm  -->
+		<Param name="AntiAffintyAction" value="Off" type="string" />
+	</Role>
+  <Role roleName="NagiosAgent">
+    <Param name="NagiosAddress" value="" type="string" />
+   <-- if NagiosAddress is IP specify nagios host FQDN -->
+    <Param name="NagiosHostName" value="" type="string" /> 
+    <Param name="NagiosUser" value="" type="string" />
+    <Param name="NagiosUserPassword" value="" type="string" />
+  </Role>
+  <Role roleName="SCOMAgent">
+    <Param name="DBConnectionString" value="server=<servername>;database=OperationsManager;user id=<user>;password=<pass>" type="string"/>
+  </Role>
+  <Role roleName="Exchange">
+    <PSSession>
+      <Param name="ConnectionUri" value="http://{0}/powershell/" variable="$serverName" />
+      <Param name="ConfigurationName" value="Microsoft.Exchange" />
+    </PSSession>
+  </Role>
+</Configuration>
