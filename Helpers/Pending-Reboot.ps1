@@ -13,6 +13,8 @@
        Added PendFileRenVal - Contents of the PendingFileRenameOperations Reg Entry 
        Removed .Net Registry connection, replaced with WMI StdRegProv 
        Added ComputerPendingRename 
+       
+  Original script at https://gallery.technet.microsoft.com/scriptcenter/Get-PendingReboot-Query-bdb79542
 #>
 
 $status = 1
