@@ -51,11 +51,10 @@ try
 				    {
 					    $str = "Failed to install $($update.FullName)! Error $res"
 					    $output += "$str`r`n"
-					    Write-Host $str
-
-					    $status = 0
+					    throw $str
 				    }
 			    }
+			    $updated = $true
 		    }
 	    }
 
