@@ -1,4 +1,4 @@
-﻿#Exchange post script
+#Exchange post script
 param([bool]$UsePSSession)
 
 function Restart-ServiceA
@@ -122,14 +122,14 @@ try
  
 			$output += "Restarting the MSExchangeTransport Service...`r`n"
 
-			[void](Restart-Service MSExchangeTransport)
+			[void](Restart-ServiceA MSExchangeTransport)
 		}
 
 		if($exchangeServer.IsFrontendTransportServer)
 		{
 			$output += "Restarting the MSExchangeFrontEndTransport Service...`r`n"
 
-			[void](Restart-Service MSExchangeFrontEndTransport)
+			[void](Restart-ServiceA MSExchangeFrontEndTransport)
 		} 
 	}
 }
