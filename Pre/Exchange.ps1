@@ -199,7 +199,7 @@ catch
     $output += $_
 }			
 
-@{
+New-Object PSCustomObject -Property @{
     Status = $status
     Details = $output
 }
