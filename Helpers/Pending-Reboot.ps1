@@ -1,4 +1,21 @@
-﻿$status = 1
+<#
+.NOTES 
+    Author:  Brian Wilhite 
+    Email:   bcwilhite (at) live.com 
+    Date:    29AUG2012 
+    PSVer:   2.0/3.0/4.0/5.0 
+    Updated: 01DEC2014 
+    UpdNote: Added CCMClient property - Used with SCCM 2012 Clients only 
+       Added ValueFromPipelineByPropertyName=$true to the ComputerName Parameter 
+       Removed $Data variable from the PSObject - it is not needed 
+       Bug with the way CCMClientSDK returned null value if it was false 
+       Removed unneeded variables 
+       Added PendFileRenVal - Contents of the PendingFileRenameOperations Reg Entry 
+       Removed .Net Registry connection, replaced with WMI StdRegProv 
+       Added ComputerPendingRename 
+#>
+
+$status = 1
 $output = ""
 
 try 
