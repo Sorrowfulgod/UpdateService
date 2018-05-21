@@ -29,7 +29,7 @@ Update process flow for one server shown in UpdateProcess.png
  - - if updates not available, go to next server processing
  - - if updates available
  - - - Enter maintenance mode, by execution scripts from **Pre** folder - scripts selected by names, contains in server roles list
- - - - Using script script **Pending-Reboot.ps1** check for server pending reboot. Reboot if necessary
+ - - - Using script script **Helpers\Pending-Reboot.ps1** check for server pending reboot. Reboot if necessary
  - - - Check and install updates. Check for pending reboot. Reboot if necessary. Loop until no updates is available
  - - - Exit maintenance mode, by execution scripts from **Post** folder - scripts selected by names, contains in server roles list
  - - - Run script **Helpers\Start-Services.ps1** on updated server to ensure all services with start mode **Automatic** is started
