@@ -20,4 +20,24 @@ Update-Servers.ps1 [[-ServerList] <String[]>] [[-ServerListFile] <String>] [[-Sk
   - OnlyShowList - only shows generated list of servers to update
   - DontStopOnError - don't stop execution if any error occured. By default script execution will stop
 
-# Description will coming soon
+# Update process
+
+Update process flow for one server shown in UpdateProcess.png
+
+ - First, update script uses *Helpers\Get-InstalledFeatures.ps1* for get server roles. This script returns array of server roles names (feel free to add nedeed roles detection"
+ - Script check for available updates for server
+ - - if updates not available, go to next server processing
+ - - if updates available
+ - - - Enter maintenance mode, by execution scripts from *Pre* folder - script selected by names, contains in server roles list
+ - - - Check for server pending reboot. Reboot if necessary
+ - - - Check and install updates. Check for pending reboot. Reboot if necessary. Loop until no updates is available
+ 
+ # Existing maintenace modules
+ 
+ # Config format
+ 
+ # Maintenance module description
+ 
+ # Coming soon
+ 
+ Script for creation update powershell session on servers
