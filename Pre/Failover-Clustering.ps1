@@ -81,11 +81,11 @@ try
 							Save-VM -VM $vm -ErrorAction Stop
 							$result = $true
 							
-							#$str = "Move virtual machine group `"$($group.Name)`" using quick migration..."
-							#$output += "$str`r`n" 
-							#Write-Host $str
+							$str = "Move virtual machine group `"$($group.Name)`" using quick migration..."
+							$output += "$str`r`n" 
+							Write-Host $str
 
-							#$result = $group | Move-ClusterGroup -ErrorAction Continue -WarningAction SilentlyContinue
+							$result = $group | Move-ClusterGroup -ErrorAction Continue -WarningAction SilentlyContinue
 						}
 					}
 					else
