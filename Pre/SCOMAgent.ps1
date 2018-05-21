@@ -41,6 +41,9 @@ EXEC p_MaintenanceModeStart
 	
 	$QueryCommand.Dispose()
 	$Connection.Dispose()
+
+	Write-Host "Sleeping 5 minutes (wait for monitors unload)..."
+	Start-Sleep -Seconds 300
 }
 catch 
 {
