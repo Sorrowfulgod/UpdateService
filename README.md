@@ -25,13 +25,14 @@ Update-Servers.ps1 [[-ServerList] <String[]>] [[-ServerListFile] <String>] [[-Sk
 Update process flow for one server shown in UpdateProcess.png
 
  - First, update script uses **Helpers\Get-InstalledFeatures.ps1** for get server roles. This script returns array of server roles names (feel free to add nedeed roles detection"
- - Script check for available updates for server
+ - **Helpers\Install-Updates.ps1** script check for available updates for server (script can work in **COM mode, WMI mode (pre server 1709 editions, and past - WMI mechanism is changed!)**. Also have support to work in custom powershell sessions)
  - - if updates not available, go to next server processing
  - - if updates available
  - - - Enter maintenance mode, by execution scripts from **Pre** folder - scripts selected by names, contains in server roles list
- - - - Check for server pending reboot. Reboot if necessary
+ - - - Using script script **Pending-Reboot.ps1** check for server pending reboot. Reboot if necessary
  - - - Check and install updates. Check for pending reboot. Reboot if necessary. Loop until no updates is available
  - - - Exit maintenance mode, by execution scripts from **Post** folder - scripts selected by names, contains in server roles list
+ - - - Run script **Helpers\Start-Services.ps1** on updated server to ensure all services with start mode **Automatic** is started
  
 # Existing maintenace modules
 - AD-Domain-Services.ps1: Pre script for Active Directory Domain Controllers - check current updated domain controller for holding RID or PDC fsmo roles. If so - moves fsmo to another domain controller
@@ -43,14 +44,14 @@ Update process flow for one server shown in UpdateProcess.png
 - SCOMAgent.ps1 - Pre/post script for managing server downtime in SCOM. When entering maintenance mode sleep 5 minutes for monitors unload (avoid unneeded alerts)
 - StorageSpacesDirect.ps1 - Post script for Storage Spaces Direct nodes. Waites for end of array(s) rebuild. In other case update of other S2D nodes will fail
 
- # Config format
+# Config format
  
- coming soon
+coming soon
  
- # Maintenance module description
+# Maintenance module description
  
- **Dummy-Module.ps1** is example of maintenance module. Module must return PSObject with two properties: **Status (1 - success, 0 - fail)** and **Output (this will be writted to log)**. Feel free using of **Write-Host** to display module progress
+**Dummy-Module.ps1** is example of maintenance module. Module must return PSObject with two properties: **Status (1 - success, 0 - fail)** and **Output (this will be writted to log)**. Feel free using of **Write-Host** to display module progress
  
- # Coming soon
+# Coming soon
  
- Script for creation update powershell session on servers
+Script for creation update powershell session on servers. How to achieve security and manage access to update process.
