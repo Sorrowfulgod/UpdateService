@@ -24,13 +24,14 @@ Update-Servers.ps1 [[-ServerList] <String[]>] [[-ServerListFile] <String>] [[-Sk
 
 Update process flow for one server shown in UpdateProcess.png
 
- - First, update script uses *Helpers\Get-InstalledFeatures.ps1* for get server roles. This script returns array of server roles names (feel free to add nedeed roles detection"
+ - First, update script uses *_Helpers\Get-InstalledFeatures.ps1*_ for get server roles. This script returns array of server roles names (feel free to add nedeed roles detection"
  - Script check for available updates for server
  - - if updates not available, go to next server processing
  - - if updates available
- - - - Enter maintenance mode, by execution scripts from *Pre* folder - script selected by names, contains in server roles list
+ - - - Enter maintenance mode, by execution scripts from *Pre* folder - scripts selected by names, contains in server roles list
  - - - Check for server pending reboot. Reboot if necessary
  - - - Check and install updates. Check for pending reboot. Reboot if necessary. Loop until no updates is available
+ - - - Exit maintenance mode, by execution scripts from *Post* folder - scripts selected by names, contains in server roles list
  
  # Existing maintenace modules
  
