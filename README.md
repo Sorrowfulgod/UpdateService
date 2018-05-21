@@ -40,7 +40,7 @@ Update process flow for one server shown in UpdateProcess.png
 - Exchange.ps1 - Pre/post scripts for Exchange server. Works only on DAG members. Enter maintenace mode: move all active database copies to another DAG members, disable database activation, draining transport queue, disable all componets on server. Exit maintenace mode: enable database activation, enable all componets on server
 - Failover-Clustering.ps1 - Pre/post scripts for Failover Clustering. Enter maintenace mode: if cluster contains only VM roles - suspend node without draining, in other case node not suspended because update may fail (SQL Cluster, SQL Always On, VMM), lower node weight to avoid quorum recalculation on reboot, move all owned roles to another cluster nodes. Exit maintenace mode: if node suspened - resume node, restore node weight.
 - NagiosAgent.ps1 - Pre/post script for managing server downtime in Nagios
-- NLB.ps1 - Pre/post scripts for NLB cluster nodes. Enter maintenace mode: stop NLB node, set node proterties to initial state 'Stopped' and retain suspended. Exit maintenace mode: start NLB node, set node properties to initial state 'Started' and not retain suspended
+- NLB.ps1 - Pre/post scripts for NLB cluster nodes. Enter maintenace mode: stop NLB node, set node properties to initial state 'Stopped' and retain suspended. Exit maintenace mode: start NLB node, set node properties to initial state 'Started' and not retain suspended
 - SCOMAgent.ps1 - Pre/post script for managing server downtime in SCOM. When entering maintenance mode sleep 5 minutes for monitors unload (avoid unneeded alerts)
 - StorageSpacesDirect.ps1 - Post script for Storage Spaces Direct nodes. Waites for end of array(s) rebuild. In other case update of other S2D nodes will fail
 
