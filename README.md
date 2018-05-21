@@ -24,7 +24,7 @@ Update-Servers.ps1 [[-ServerList] <String[]>] [[-ServerListFile] <String>] [[-Sk
 
 Update process flow for one server shown in UpdateProcess.png
 
- - First, update script uses **Helpers\Get-InstalledFeatures.ps1** for get server roles. This script returns array of server roles names (feel free to add nedeed roles detection"
+ - First, update script uses **Helpers\Get-InstalledFeatures.ps1** for get server roles. This script returns array of server roles names (feel free to add nedeed roles detection)
  - **Helpers\Install-Updates.ps1** script check for available updates for server (script can work in **COM mode, WMI mode (pre server 1709 editions, and past - WMI mechanism is changed!)**. Also have support to work in custom powershell sessions
  - - if updates not available, go to next server processing
  - - if updates available
