@@ -24,17 +24,25 @@ Update-Servers.ps1 [[-ServerList] <String[]>] [[-ServerListFile] <String>] [[-Sk
 
 Update process flow for one server shown in UpdateProcess.png
 
- - First, update script uses *_Helpers\Get-InstalledFeatures.ps1*_ for get server roles. This script returns array of server roles names (feel free to add nedeed roles detection"
+ - First, update script uses **Helpers\Get-InstalledFeatures.ps1** for get server roles. This script returns array of server roles names (feel free to add nedeed roles detection"
  - Script check for available updates for server
  - - if updates not available, go to next server processing
  - - if updates available
- - - - Enter maintenance mode, by execution scripts from *Pre* folder - scripts selected by names, contains in server roles list
+ - - - Enter maintenance mode, by execution scripts from **Pre** folder - scripts selected by names, contains in server roles list
  - - - Check for server pending reboot. Reboot if necessary
  - - - Check and install updates. Check for pending reboot. Reboot if necessary. Loop until no updates is available
- - - - Exit maintenance mode, by execution scripts from *Post* folder - scripts selected by names, contains in server roles list
+ - - - Exit maintenance mode, by execution scripts from **Post** folder - scripts selected by names, contains in server roles list
  
- # Existing maintenace modules
- 
+# Existing maintenace modules
+- AD-Domain-Services.ps1: Pre script for Active Directory Domain Controllers - check current updated domain controller for holding RID or PDC fsmo roles. If so - moves fsmo to another domain controller
+- DPMServer.ps1 - Pre/post scripts for DPM server. Enter maintenace mode: disable agents, wait for all jobs completion. Exit maintenace mode: enable agents, check protected sources consistency. If not conststent - run check
+- Exchange.ps1 - Pre/post scripts for Exchange server. Works only on DAG members. Enter maintenace mode: move all active database copies to another DAG members, disable database activation, draining transport queue, disable all componets on server. Exit maintenace mode: enable database activation, enable all componets on server
+- Failover-Clustering.ps1 - Pre/post scripts for Failover Clustering. Enter maintenace mode: if cluster contains only VM roles - suspend node without draining, in other case node not suspended because update may fail (SQL Cluster, SQL Always On, VMM), lower node weight to avoid quorum recalculation on reboot, move all owned roles to another cluster nodes. Exit maintenace mode: if node suspened - resume node, restore node weight.
+- NagiosAgent.ps1 - Pre/post script for managing server downtime in Nagios
+- NLB.ps1 - Pre/post scripts for NLB cluster nodes. Enter maintenace mode: stop NLB node, set node proterties to initial state 'Stopped' and retain suspended. Exit maintenace mode: start NLB node, set node properties to initial state 'Started' and not retain suspended
+- SCOMAgent.ps1 - Pre/post script for managing server downtime in SCOM. When entering maintenance mode sleep 5 minutes for monitors unload (avoid unneeded alerts)
+- StorageSpacesDirect.ps1 - Post script for Storage Spaces Direct nodes. Waites for end of array(s) rebuild. In other case update of other S2D nodes will fail
+
  # Config format
  
  # Maintenance module description
