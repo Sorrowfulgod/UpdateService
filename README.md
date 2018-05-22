@@ -49,6 +49,8 @@ Update process flow for one server shown in UpdateProcess.png
 coming soon
  
 # Maintenance module description
+
+Scripts for enter maintenace mode placed in **Pre** folder. To exit - in **Post**
  
 **Dummy-Module.ps1** is example of maintenance module. Module must return PSObject with two properties: **Status (1 - success, 0 - fail)** and **Output (this will be writted to log)**. Feel free using of **Write-Host** to display module progress
  
