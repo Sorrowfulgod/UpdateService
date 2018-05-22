@@ -4,7 +4,7 @@ try
 {
     Import-Module PSScheduledJob -ErrorAction Stop
 
-    #$ccmClient = ((Get-WmiObject -namespace root -class __NAMESPACE -filter "name='ccm'") -ne $null)
+    $ccmClient = $((Get-WmiObject -namespace root -class __NAMESPACE -filter "name='ccm'") -ne $null )
     $ccmUpdatesCount = -1
     if ($ccmClient)
     {
