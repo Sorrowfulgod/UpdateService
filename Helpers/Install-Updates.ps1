@@ -64,8 +64,7 @@ try
 			    Data = $updated
 	    }
     }
-
-    if ($ccmUpdatesCount -le 0)
+    else
     {
 	    $winVer = [int](((Get-WmiObject win32_operatingsystem).Version.Split("."))[0])
 
