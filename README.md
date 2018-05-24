@@ -46,7 +46,40 @@ Update process flow for one server shown in UpdateProcess.png
 
 # Config format
  
-coming soon
+config.xml is configguration file for update service wich contains paraters to pass modules or helpers. Parameters will be passed in order from top to bottom.
+
+**GlobalParams** node contains parameters for update script or any of helper. Can contain child node(s) **Param** with following attributes:
+- Helper: name of any existing helpers ("Install-Updates", "Start-Services" e.t.c)
+- name: name of parameter. Used to define meaning of parameter. Not used in script
+- value: value of parameter
+- type: name of powershell type (bool, string, int e.t.c)
+
+Currently implemented global parameters for helpers:
+- Install-Updates, parameter "UseWMIInsteadCOM" tell script wich mechanism is used for update: WMI or COM. In present time WMI mechanism works very strange, so I recommend use it in testing purposes.
+
+Node **PSSession** defines name of powershell configuration wich will be used instead default "microsoft.powershell". This mechanism development in progress...
+
+**Role** nodes can contains parameters used for pre/post script for detected server roles. Also can contains list of skipped updates. **Role** node attributes and child nodes:
+- roleName: name of role (any of detected by Get-InstalledFeatures helper). For example: "WindowsAzurePack" 
+- skipUpdates: comma-separeted list of of names, partial names, or KB numbers of skipped updates.For example: "Windows Azure Pack,KB4132216(or simply 4132216) e.t.c". 
+**Role** node can contains child nodes **Param** which contains parameters passed to role pre/post scripts. **Param** node attributes:
+- name: name of parameter. Used to define meaning of parameter. Not used in script
+- value: value of parameter
+- type: name of powershell type (bool, string, int e.t.c)
+
+Currently implemenented parameters for roles:
+- Role: Failover-Clustering. Parameters:
+- - Name: UseQuickMigrationIfLiveFails, type: bool. Defines will quick migration of VM will used (save state and nigrate) if live migration fails
+- - Name: AntiAffintyAction, type: string, values: "Save", "Off". If you cluster is in forced anti-affinity mode (VMs with same AntiAffinityClassNames never will run on same host) and you have two node cluster (or where is no free node to migrate VM) - defines action wich will be used to evacuate VM from host: save and move, or shutdown and move. Post script will start this VMs.
+- Role: NagiosAgent. Parameters:
+- - Name: NagiosAddress, type: string. Specifies IP address or FQDN of Nagios host
+- - Name: NagiosHostName, type: string. If **NagiosAddress** parameter is IP address, specifies Nagios host FQDN
+- - Name: NagiosUser, type: string. Specifues username of user, wich have permission to set/clear downtime for server
+- - Name: NagiosUserPassword, type: string. Specifies password of specified user
+- Role: SCOMAgent. Parameters:
+- - Name: DBConnectionString, type: string. To enter/exit maintenance mode used execution of stored procedures "p_MaintenanceModeStart", "p_MaintenanceModeSop", so this parameter defines connection string to SCOM database. In current release you can create user in SQL server, grant "Execute" permission to stored procedures and specify user and password in connection string. Or use "Integrated Security=SSPI" if user under wich script is executed have access to execute this stored procedures. In feature realeases always will be used "Integrated Security=SSPI".
+- Role: Exchange. Parameters:
+Node **PSSession**. This node will be removed in feature releases. Don't change this parameter
  
 # Maintenance module description
 
