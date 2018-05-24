@@ -85,7 +85,7 @@ Currently implemenented parameters for roles:
 - Role: **SCOMAgent**. Parameters:
 - - Name: DBConnectionString, type: string. To enter/exit maintenance mode used execution of stored procedures "p_MaintenanceModeStart", "p_MaintenanceModeSop", so this parameter defines connection string to SCOM database. In current release you can create user in SQL server, grant "Execute" permission to stored procedures and specify user and password in connection string. Or use "Integrated Security=SSPI" if user under wich script is executed have access to execute this stored procedures. In feature realeases always will be used "Integrated Security=SSPI".
 - Role: **Exchange**. Parameters:
-Node **PSSession**. This node will be removed in feature releases. Don't change this parameter
+- - Node **PSSession**. This node will be removed in feature releases. Don't change this parameter
  
 # Maintenance module description
 
