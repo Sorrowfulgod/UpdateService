@@ -1,5 +1,5 @@
 # Failover clustering Pre script
-param([bool]$UseQuickMigrationIfLiveFails)
+param([bool]$UseQuickMigrationIfLiveFails, [string]$AntiAffintyAction)
 
 $status = 1
 $output = ""
@@ -70,31 +70,30 @@ try
 						$output += "$str`r`n" 
 						Write-Host $str
 
-						$result = $group | Move-ClusterVirtualMachineRole -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+						$result = $group | Move-ClusterVirtualMachineRole -MigrationType Live -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 						if ($result -eq $null)
 						{
-							$str = "Unable to live migrate VM. Saving..." 
+                            $str = "Unable to live migrate VM. Perform migration using `"$AntiAffintyAction`" action..." 
 							$output += "$str`r`n" 
 							Write-Host $str
-
-							$vm = $group | Get-VM
-							Save-VM -VM $vm -ErrorAction Stop
-							$result = $true
-							
-							$str = "Move virtual machine group `"$($group.Name)`" using quick migration..."
-							$output += "$str`r`n" 
-							Write-Host $str
-
-							$result = $group | Move-ClusterGroup -ErrorAction Continue -WarningAction SilentlyContinue
+                            
+                            switch ($AntiAffintyAction)
+                            {
+                                "Off" { $result = $group | Move-ClusterVirtualMachineRole -MigrationType ShutdownForce -ErrorAction SilentlyContinue -WarningAction SilentlyContinue }
+                                "Save" { $result = $group | Move-ClusterVirtualMachineRole -MigrationType Quick -ErrorAction SilentlyContinue -WarningAction SilentlyContinue }
+                                Default { throw "Unknown action `"$AntiAffintyAction`"" } 
+                            }
 						}
 					}
 					else
 					{
-						$str = "Moving virtual machine group `"$($group.Name)`" to another node using live migration..." 
+                        $result = $null
+						$str = "Try moving virtual machine group `"$($group.Name)`" to another node using live migration..." 
 						$output += "$str`r`n" 
 						Write-Host $str
 
 						$result = $group | Move-ClusterVirtualMachineRole -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+
 						if ($result -eq $null)
 						{
 							$str = "Unable to move virtual machine group `"$($group.Name)`" using live migration" 
