@@ -65,6 +65,7 @@ Node **PSSession** defines name of powershell configuration wich will be used in
 
 **Role** node attributes and child nodes:
 - roleName: name of role (any of detected by Get-InstalledFeatures helper). For example: "WindowsAzurePack" 
+- isLocal: if "true" role scripts is executing locally (for example to avoid double-hop authorization: check VMM or DPM agents for update using locally installed management tools
 - skipUpdates: comma-separeted list of of names, partial names, or KB numbers of skipped updates.For example: "Windows Azure Pack,KB4132216(or simply 4132216) e.t.c". 
 
 **Role** node can contains child nodes **Param** which contains parameters passed to role pre/post scripts. **Param** node attributes:
