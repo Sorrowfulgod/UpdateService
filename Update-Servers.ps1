@@ -1,4 +1,4 @@
-﻿<#
+<#
 .NOTES
     Copyright (c) Sergey Gruzdov. All rights reserved.
     
@@ -86,9 +86,10 @@ function Log($message, $color = "Gray", [switch]$OnlyFile = $false, $Server)
 function InvokeStep($serverName, $fileName, $arguments, $feature)
 {
 	$usePSSession = $false
+    $saveArguments = $arguments
 
 	$psSessionParams = @{}
-	if ($xmlConfig.Configuration.GlobalParams.PSSession)
+	if ($xmlConfig.Configuration.GlobalParams.PSSession -and $serverName -ne ".")
 	{
 		$rolePSSession = $xmlConfig.Configuration.GlobalParams.PSSession
         $psSessionParams.Add("ComputerName", $serverName)
@@ -105,13 +106,28 @@ function InvokeStep($serverName, $fileName, $arguments, $feature)
 			foreach($param in $roleActionParams)
 			{
 				$argumentsNames += $param.Name
-                if ($param.Type -match "string")
-                {
-				    Invoke-Expression "`$arg = [$($param.Type)]`"$($param.Value)`""
-                }
+                if ($param.variable)
+			    {
+                    if ($serverName -eq "." -and $param.variable -eq '$serverName')
+                    {
+                        $varName = '$saveArguments'
+                    }
+                    else
+                    {
+				        $varName = $param.variable
+                    }
+				    Invoke-Expression "`$arg = $varName"
+			    }
                 else
                 {
-				    Invoke-Expression "`$arg = [$($param.Type)]::Parse(`"$($param.Value)`")"
+                    if ($param.Type -match "string")
+                    {
+				        Invoke-Expression "`$arg = [$($param.Type)]`"$($param.Value)`""
+                    }
+                    else
+                    {
+				        Invoke-Expression "`$arg = [$($param.Type)]::Parse(`"$($param.Value)`")"
+                    }
                 }
 
 				$arguments += $arg
@@ -173,18 +189,12 @@ function InvokeStep($serverName, $fileName, $arguments, $feature)
 			{
 				$paramValue = $param.value
 			}
-
-            if ( $($psSessionParams.ContainsKey("ComputerName") -and $param.Name -eq "ConnectionUri"))
-            {
-		        throw "ComputerName and ConnectionUri must not be specifed together!"
-            }
-
-            if ($($psSessionParams.ContainsKey("ConfigurationName") -and $param.Name -eq "ConfigurationName"))
-            {
-		        throw "Duplicate ConfigurationName parameter!"
-            }
-
 			$psSessionParams.Add($param.Name, $paramValue)
+
+            if ($param.Name -eq "ConfigurationName")
+            {
+		        Write-Host "Using ps session configuration name `"$paramValue`"" -ForegroundColor Yellow
+            }
 		}
 	}
 
@@ -212,7 +222,7 @@ function InvokeStep($serverName, $fileName, $arguments, $feature)
             {
                 $session = New-PSSession @psSessionParams -Authentication Negotiate
                 $invokeCommandParams.Add("Session", $session)
-                $arguments += $usePSSession # always last parameter!!!!!!!!!!!!!
+                #$arguments = $serverName
             }
             else
             {
@@ -221,7 +231,16 @@ function InvokeStep($serverName, $fileName, $arguments, $feature)
 
             $invokeCommandParams.Add("ArgumentList", $arguments)
 
-	        $stepResult = Invoke-Command @invokeCommandParams
+            if ($serverName -ne ".")
+            {
+	            $stepResult = Invoke-Command @invokeCommandParams
+            }
+            else
+            {
+                $stepScriptBlock = Get-Command  $fileName | select -ExpandProperty ScriptBlock 
+                $stepResult = $stepScriptBlock.Invoke($arguments)
+            }
+
             if ($stepResult -and $stepResult.Status -eq 0)
             {
 				Log -Message $("Error `"{0}`" during step invoke on try $i of $maxStepIterations. Sleep 30 seconds" -f $($stepResult.Details)) -Color "Yellow"
@@ -271,20 +290,21 @@ function InvokeStep($serverName, $fileName, $arguments, $feature)
 
 function CheckFeaturesActions($featuresList, $prefix, $ServerName) 
 {
-	$computerName = $ServerName
     foreach($feature in $featuresList) 
     {
         $scriptFileName = "$invokePath\$prefix\{0}.ps1" -f $feature
 
         if (Test-Path $scriptFileName)
         {
+	        $computerName = $ServerName
+
 			$roleConfig = $xmlConfig.Configuration.Role | ? roleName -eq $feature
 			if ($roleConfig -ne $null -and $roleConfig.local -eq "true")
 			{
 				$computerName = "."
 			}
             Log -Message $("Found $prefix-update script for feature '{0}'. Invoking on '$computerName'..." -f $feature) -Color "Yellow"
-            $actionsResult = InvokeStep -serverName $computerName -fileName $scriptFileName -feature $feature
+            $actionsResult = InvokeStep -serverName $computerName -fileName $scriptFileName -arguments $ServerName -feature $feature
             if ($actionsResult -eq $null -or $actionsResult.Status -eq 0) 
             {
                 Log -message "InvokeStep for feature $feature failed! Details: $($actionsResult.Details)"
@@ -342,7 +362,7 @@ function CheckPendingReboot
 
 	    $rebootEnd = Get-Date	
 	    $rebootDiff = $rebootEnd - $rebootStart
-        Log -Message "'$server' is back after $([Math]::Round($rebootDiff.TotalSeconds)) sec" -Color "Cyan"
+        Log -Message "'$server' is back after $($rebootDiff.TotalSeconds) sec" -Color "Cyan"
     
         Log -Message "Starting services on '$serverName'" -Color "White"
         $result = $(InvokeStep -serverName $serverName -fileName $startServicesStep) # Ignore results
@@ -427,8 +447,6 @@ try
 
     $xmlConfigPath = "$invokePath\config.xml"
     [xml]$xmlConfig = Get-Content $xmlConfigPath -ErrorAction SilentlyContinue
-
-    $usePSSession = $($xmlConfig.Configuration.GlobalParams.PSSession -ne $null)
 
     $installedFeaturesStep = "$invokePath\Helpers\Get-InstalledFeatures.ps1"
     $pendingRebootStep = "$invokePath\Helpers\Pending-Reboot.ps1"
@@ -576,7 +594,7 @@ try
                         {
                             # check for updates on server
                             Log -Message $("Check for updates on '{0}'" -f $serverName) -Color "White"
-                            $result = $(InvokeStep -serverName $serverName -fileName $installUpdatesStep -Arguments @($skippedUpdates, $true, $usePSSession))
+                            $result = $(InvokeStep -serverName $serverName -fileName $installUpdatesStep -Arguments @($skippedUpdates, $true))
                             if ($result.Status -ne 1) 
                             {
                                 throw $("Error check for updates on '{0}'" -f $serverName)
@@ -592,6 +610,17 @@ try
                                     throw "Check pre actions failed!"
                                 }
                                 
+                                <# 
+                                # TEMP for scvmm
+                                if ($installedFeatures.Contains("VMMAgent"))
+                                {
+                                    Log -Message $("Check for VMM agent update for '{0}'" -f $serverName) -Color "White"
+
+                                    $runasAccount = Get-SCRunAsAccount "Fabric Admin"
+                                    $managedComp = Get-SCVMMManagedComputer | ? name -match $serverName
+                                    Update-SCVMMManagedComputer -VMMManagedComputer $managedComp -Credential $runasAccount
+                                } #>
+
                                 #
                                 # here update process
                                 if (!$(CheckPendingReboot -server $serverName)) 
@@ -604,7 +633,7 @@ try
                                 {
                                     # here check for reboot needed
                                     Log -Message $("Check and install updates on '{0}'" -f $serverName) -Color "White"
-                                    $result = $(InvokeStep -serverName $serverName -fileName $installUpdatesStep -Arguments @($skippedUpdates, $false, $usePSSession))
+                                    $result = $(InvokeStep -serverName $serverName -fileName $installUpdatesStep -Arguments @($skippedUpdates, $false))
                                     if ($result.Status -ne 1) 
                                     {
                                         if ($updateIterations -ne $maxUpdateIterations)
