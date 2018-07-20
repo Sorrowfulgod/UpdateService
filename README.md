@@ -77,7 +77,7 @@ Node **PSSession** defines name of powershell configuration wich will be used in
 Currently implemenented parameters for roles:
 - Role: **Failover-Clustering**. Parameters:
 - - Name: UseQuickMigrationIfLiveFails, type: bool. Defines will quick migration of VM will used (save state and nigrate) if live migration fails
-- - Name: AntiAffintyAction, type: string, values: "Save", "Off". If you cluster is in forced anti-affinity mode (VMs with same AntiAffinityClassNames never will run on same host) and you have two node cluster (or where is no free node to migrate VM) - defines action wich will be used to evacuate VM from host: save and move, or shutdown and move. Post script will start this VMs.
+- - Name: AntiAffintyAction, type: string, values: "Save", "Off", "TurnOff". If you cluster is in forced anti-affinity mode (VMs with same AntiAffinityClassNames never will run on same host) and you have two node cluster (or where is no free node to migrate VM) - defines action wich will be used to evacuate VM from host: save and move, shutdown and move or turn off and move (recommended if you have guest clusters in VMs). Post script will start this VMs.
 - Role: **NagiosAgent**. Parameters:
 - - Name: NagiosAddress, type: string. Specifies IP address or FQDN of Nagios host
 - - Name: NagiosHostName, type: string. If **NagiosAddress** parameter is IP address, specifies Nagios host FQDN
