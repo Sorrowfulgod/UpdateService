@@ -17,6 +17,7 @@ Update-Servers.ps1 [[-ServerList] <String[]>] [[-ServerListFile] <String>] [[-Sk
   - NoPostStep - don't exit maintenance mode
   - OnlyPostStep - perform only post steps (exit maintenance mode)
   - OnlyCheckReboot - check for reboot pending and reboot server with enter/exit maintenance mode
+  - RebootServer - Perform server rebooot with mainternance mode
   - OnlyShowList - only shows generated list of servers to update
   - DontStopOnError - don't stop execution if any error occured. By default script execution will stop
 
