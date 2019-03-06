@@ -43,7 +43,7 @@ Update process flow for one server shown in UpdateProcess.png
 - NagiosAgent.ps1 - Pre/post script for managing server downtime in Nagios
 - NLB.ps1 - Pre/post scripts for NLB cluster nodes. Enter maintenace mode: stop NLB node, set node properties to initial state 'Stopped' and retain suspended. Exit maintenace mode: start NLB node, set node properties to initial state 'Started' and not retain suspended
 - SCOMAgent.ps1 - Pre/post script for managing server downtime in SCOM. When entering maintenance mode sleep 5 minutes for monitors unload (avoid unneeded alerts)
-- StorageSpacesDirect.ps1 - Post script for Storage Spaces Direct nodes. Waites for end of array(s) rebuild. In other case update of other S2D nodes will fail
+- StorageSpacesDirect.ps1 - Pre/post script for Storage Spaces Direct nodes. Enter mainternance mode: place physical disks in maintenance mode, waites for end of array(s) rebuild. Exit mainternance mode: stop maintenance for physical disks, waites for end of array(s) rebuild.
 
 # Config format
  
