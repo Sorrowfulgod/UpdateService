@@ -21,6 +21,18 @@
 
     .PARAMETER DontStopOnError
         Don't stop update on errors
+
+    .PARAMETER OnlyCheckReebot
+        Check if reboot needed. Reboot if necessary
+
+    .PARAMETER RebootServer
+        Perform server rebooot with mainternance mode
+        
+    .PARAMETER NoPostStep
+        Update server and leave in maintenance mode
+
+    .PARAMETER OnlyPostStep
+        Exit server maintenance mode
         
     .PARAMETER SMTPServer
         SMTP server for notifications
@@ -59,6 +71,9 @@ param(
     $OnlyCheckReboot,
 
     [switch]
+    $RebootServer,
+
+    [switch]
     $OnlyPostStep,
 
     [switch]
@@ -87,6 +102,7 @@ function InvokeStep($serverName, $fileName, $arguments, $feature)
 {
 	$usePSSession = $false
     $saveArguments = $arguments
+    $stepResult = $null
 
 	$psSessionParams = @{}
 	if ($xmlConfig.Configuration.GlobalParams.PSSession -and $serverName -ne ".")
@@ -122,7 +138,7 @@ function InvokeStep($serverName, $fileName, $arguments, $feature)
                 {
                     if ($param.Type -match "string")
                     {
-				        Invoke-Expression "`$arg = [$($param.Type)]`"$($param.Value)`""
+				        Invoke-Expression "`$arg = `"$($param.Value)`""
                     }
                     else
                     {
@@ -196,6 +212,7 @@ function InvokeStep($serverName, $fileName, $arguments, $feature)
 		        Write-Host "Using ps session configuration name `"$paramValue`"" -ForegroundColor Yellow
             }
 		}
+	    $arguments += $true
 	}
 
 	$status = 0
@@ -214,7 +231,7 @@ function InvokeStep($serverName, $fileName, $arguments, $feature)
 			}
 
 			$invokeCommandParams = @{
-                FilePath = $fileName;
+                FilePath = $fileName
                 ErrorAction = "Stop"
             }
 
@@ -285,7 +302,7 @@ function InvokeStep($serverName, $fileName, $arguments, $feature)
         }
     }
     
-    return $stepResult
+    $stepResult
 }
 
 function CheckFeaturesActions($featuresList, $prefix, $ServerName) 
@@ -318,7 +335,7 @@ function CheckFeaturesActions($featuresList, $prefix, $ServerName)
 
 function CheckPendingReboot
 {
-	param($server,  $features = $null)
+	param($server,  $features = $null, $forceReboot)
 	
     Log -Message "Check pending reboot for '$server'" -Color "Cyan"
     $result = $(InvokeStep -serverName $server -fileName $pendingRebootStep)
@@ -326,14 +343,15 @@ function CheckPendingReboot
     {
         return $false
     }
-    if ($result.Data) 
+
+    if ($result.Data -or $forceReboot) 
     {
         Log -Message "Reboot pending on '$server'. Rebooting..." -Color "Cyan"
 
 	    if ($features)
 	    {
-                Log -Message "Features list defined for '$server'. Invoking 'pre' steps..." -Color "Yellow"
-		    if (!$(CheckFeaturesActions -featuresList $installedFeatures -prefix "pre" -ServerName $serverName))
+            Log -Message "Features list defined for '$server'. Invoking 'pre' steps..." -Color "Yellow"
+		    if (!$(CheckFeaturesActions -featuresList $installedFeatures -prefix "pre" -ServerName $server))
 		    {
 			    throw $("CheckPendingReboot: pre steps failed!")
 		    }
@@ -348,7 +366,7 @@ function CheckPendingReboot
         catch
         {
             Log -Message "'Restart-Computer' failed on '$server'. Invoke 'shutdown.exe'..." -Color "Cyan"
-            Invoke-Command -ComputerName $serverName -ScriptBlock { shutdown -r -t 0 }
+            Invoke-Command -ComputerName $server -ScriptBlock { shutdown -r -t 0 }
 
             Log -Message  "Waiting for '$server' to shutdown..." -Color "Cyan"
             while ($(Test-WSMan -ComputerName $server -ErrorAction SilentlyContinue)) {}
@@ -364,13 +382,13 @@ function CheckPendingReboot
 	    $rebootDiff = $rebootEnd - $rebootStart
         Log -Message "'$server' is back after $($rebootDiff.TotalSeconds) sec" -Color "Cyan"
     
-        Log -Message "Starting services on '$serverName'" -Color "White"
-        $result = $(InvokeStep -serverName $serverName -fileName $startServicesStep) # Ignore results
+        Log -Message "Starting services on '$server'" -Color "White"
+        $result = $(InvokeStep -serverName $server -fileName $startServicesStep) # Ignore results
 
 	    if ($features)
 	    {
             Log -Message "Features list defined for '$server'. Invoking 'post' steps..." -Color "Yellow"
-		    if (!$(CheckFeaturesActions -featuresList $installedFeatures -prefix "post" -ServerName $serverName))
+		    if (!$(CheckFeaturesActions -featuresList $installedFeatures -prefix "post" -ServerName $server))
 		    {
 			    throw ""
 		    }
@@ -409,7 +427,7 @@ function Get-ADComputerViaADSI
     {
         $nameParam = "(|(name=$name)(dnsHostName=$name))"
     }
-
+    
     if (!([String]::IsNullOrEmpty($spn)))
     {
         $spnParam = "(ServicePrincipalName=$spn*)"
@@ -431,6 +449,11 @@ function Get-ADComputerViaADSI
 #
 try 
 {
+    if ($RebootServer)
+    {
+	$OnlyCheckReboot = $true
+    }
+
     $updateProcessSuccess = $true
     $localNetbios = $($env:ComputerName)
     $localFQDN = "{0}.{1}" -f $($env:ComputerName), $((Get-WmiObject -Class Win32_ComputerSystem).Domain)
@@ -569,7 +592,6 @@ try
                         $installedFeatures = @($result.Data)
 						Log -Message $("Installed features: $installedFeatures") -Color "White"
 
-                        $updated = $false
                         # check skipped updates for roles
                         $skippedUpdates = @()
                         if ($xmlConfig -ne $null)
@@ -594,15 +616,16 @@ try
                         {
                             # check for updates on server
                             Log -Message $("Check for updates on '{0}'" -f $serverName) -Color "White"
-                            $result = $(InvokeStep -serverName $serverName -fileName $installUpdatesStep -Arguments @($skippedUpdates, $true))
-                            if ($result.Status -ne 1) 
+                            $checkUpdatesResult = $(InvokeStep -serverName $serverName -fileName $installUpdatesStep -Arguments @($skippedUpdates, $true))
+                            if ($checkUpdatesResult.Status -ne 1) 
                             {
-                                throw $("Error check for updates on '{0}'" -f $serverName)
+                                throw $("Error check for updates on '{0}'. Status {1}" -f $serverName, $($checkUpdatesResult.Status))
                             }
-
-                            if ($result.Data)
+                            
+                            if ($([bool]::Parse($($checkUpdatesResult.Data))) -eq $true)
                             {
-                                $hasUpdates = $true
+				                $hasUpdates = $true
+                                $serverUpdated = $false
 
                                 # check for pre-update step
                                 if (!$(CheckFeaturesActions -featuresList $installedFeatures -prefix "pre" -ServerName $serverName))
@@ -629,9 +652,8 @@ try
                                 }
                     
                                 $updateIterations = 0
-                                while(!$updated -and $updateIterations -ne 5)
+                                while($serverUpdated -eq $false -and $updateIterations -le $maxUpdateIterations)
                                 {
-                                    # here check for reboot needed
                                     Log -Message $("Check and install updates on '{0}'" -f $serverName) -Color "White"
                                     $result = $(InvokeStep -serverName $serverName -fileName $installUpdatesStep -Arguments @($skippedUpdates, $false))
                                     if ($result.Status -ne 1) 
@@ -649,31 +671,34 @@ try
                                     }
                                     else
                                     {
-                                        $updated = $result.Data
+                                        $serverUpdated = $([bool]::Parse($($result.Data)))
                                     }
 
+                                    # here check for reboot needed
                                     if (!$(CheckPendingReboot -server $serverName)) 
                                     {
 										throw "Check pending reboot failed!"
                                     }
+
                                     $updateIterations++
                                 }
 
                                 if ($updateIterations -eq $maxUpdateIterations)
                                 {
-                                    $updated = $true
-                                    Log -Message $("Update process exceed max iterations($maxUpdateIterations). Possible WinUpdate bug" -f $serverName) -Color "Yellow"
+                                    $serverUpdated = $true
+                                    Log -Message $("Update process exceed max iterations($maxUpdateIterations). Possible WinUpdate loop" -f $serverName) -Color "Yellow"
                                 }
                                 # end of update process
                                 #
 
-                                if (!$updated)
+                                if (!$serverUpdated)
                                 {
                                     throw "Not updated!"
                                 }
                             }
                             else
                             {
+                                $hasUpdates = $false
 								$noUpdatesMessage = $("No updates for '{0}'" -f $serverName)
                                 Log -Message $noUpdatesMessage
 								SendReport -Subject $noUpdatesMessage
@@ -689,12 +714,12 @@ try
 
 						if (!$OnlyCheckReboot)
 						{
-							if ($updated -or $OnlyPostStep)
+							if ($serverUpdated -or $OnlyPostStep)
 							{
 								# check for post-update step
 								if (!$(CheckFeaturesActions -featuresList $installedFeatures -prefix "post" -ServerName $serverName)) 
 								{
-									throw ""
+									throw "Check post actions failed! $_"
 								}
 							}
 							elseif ($NoPostStep)
@@ -704,18 +729,27 @@ try
 						}
 						else
 						{
-							Log -Message "OnlyCheckReboot switch specified" -Color "Yellow"
-                            if (!$(CheckPendingReboot -server $serverName -features $installedFeatures)) 
+							if ($RebootServer)
+							{
+								Log -Message "RebootServer switch specified. Force reboot" -Color "Yellow"
+							}
+							else
+							{
+								Log -Message "OnlyCheckReboot switch specified" -Color "Yellow"
+							}
+                            if (!$(CheckPendingReboot -server $serverName -features $installedFeatures -forceReboot $RebootServer)) 
                             {
-								throw ""
+								throw "Check pendiong reboot failed! $_"
 							}
 						}
                     }
                     catch
                     {
                         $errorInUpdate = $true
-                        $updated = $false
+                        $serverUpdated = $false
                         Log -Message $("Exception in update script: '{0}'" -f $_) -Color "Red"
+
+                        throw $_
                     }
                     finally
                     {
@@ -726,14 +760,14 @@ try
 							$serverUpdateReport = gc $serverLogPath -Raw
 						}
 
-                        if ($hasUpdates -and $updated)
+                        if ($hasUpdates -and $serverUpdated)
                         {
                             $updatedServers += $serverName
 							$updateStatus = "'{0}' updated successfully" -f $serverName
                             Log -Message $updateStatus -Color "White"
 							SendReport -Subject $updateStatus -Message $serverUpdateReport
                         }
-                        elseif ($hasUpdates -and (!$updated -or $errorInUpdate))
+                        elseif ($hasUpdates -and (!$serverUpdated -or $errorInUpdate))
                         {
 							$updateStatus = "'{0}' update failed" -f $serverName
                             Log -Message $updateStatus -Color "Red"
