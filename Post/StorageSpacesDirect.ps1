@@ -1,7 +1,17 @@
-﻿$status = 1
+$status = 1
 $output = ""
 
 try {
+
+    $nodeName = $env:computername
+
+    $str = "Disabling storage maintenance mode on $nodeName..."
+    $output += "$str`r`n"
+    Write-Host $str
+    Get-StorageFaultDomain -type StorageScaleUnit -FriendlyName $nodeName | Disable-StorageMaintenanceMode
+
+    Start-Sleep -Seconds 60    
+
     $startDate = [DateTime]::Now
 
     $str = "Check is S2D rebuild job in progress..."
@@ -10,17 +20,17 @@ try {
 
     $remain = 1
     while($remain -and $remain -gt 0)
-    {
-        $remain = Get-StorageJob | ? BytesTotal -gt 0 | %{ ($_.BytesTotal-$_.BytesProcessed) / 1gb}
+    {             
+        $remain = Get-StorageJob | ?{$_.BytesTotal -gt 0 -and $_.JobState -ne "Suspended"} | %{ ($_.BytesTotal-$_.BytesProcessed) / 1gb}
         if ($remain)
         {
             $str = "Remained GB in rebuild: $remain"
             $output += "$str`r`n"
             Write-Host $str
-            Start-Sleep -Seconds 600
+            Start-Sleep -Seconds 60
         }
     }
-
+    
     $str = "Job completed. Process duration: $([DateTime]::Now - $startDate)"
     $output += $str
     Write-Host $str
