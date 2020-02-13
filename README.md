@@ -1,3 +1,5 @@
+Video about this service: https://www.youtube.com/watch?v=Q8Ic0GmhTvU&feature=youtu.be (on Russian)
+
 # UpdateService
 Update windows servers without service downtime
 
